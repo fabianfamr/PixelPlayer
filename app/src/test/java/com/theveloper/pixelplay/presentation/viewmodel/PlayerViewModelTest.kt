@@ -196,9 +196,22 @@ class PlayerViewModelTest {
         
         // Mock MusicRepository Basic Returns
         every { mockMusicRepository.getPaginatedSongs(any(), any()) } returns flowOf(androidx.paging.PagingData.empty())
+        every { mockMusicRepository.getPaginatedFavoriteSongs(any(), any()) } returns flowOf(androidx.paging.PagingData.empty())
         every { mockMusicRepository.getAudioFiles() } returns flowOf(emptyList())
+        every { mockMusicRepository.getDistinctAlbumArtSongs() } returns flowOf(emptyList())
+        every { mockMusicRepository.getHomeMixPreviewSongs(any()) } returns flowOf(emptyList())
+        every { mockMusicRepository.getSongCountFlow() } returns flowOf(0)
+        every { mockMusicRepository.getCloudSongCountFlow() } returns flowOf(0)
+        every { mockMusicRepository.searchSongs(any(), any()) } returns flowOf(emptyList())
+        every { mockMusicRepository.getMusicByGenre(any()) } returns flowOf(emptyList())
         coEvery { mockMusicRepository.getFavoriteSongIdsOnce() } returns emptySet()
         every { mockMusicRepository.getFavoriteSongIdsFlow() } returns flowOf(emptySet())
+        coEvery { mockMusicRepository.getAllSongsOnce() } returns emptyList()
+        coEvery { mockMusicRepository.getFavoriteSongsOnce(any()) } returns emptyList()
+        coEvery { mockMusicRepository.getFirstPlayableSong() } returns null
+        coEvery { mockMusicRepository.getRandomSongs(any()) } returns emptyList()
+        coEvery { mockMusicRepository.getSongIdsSorted(any(), any()) } returns emptyList()
+        coEvery { mockMusicRepository.getFavoriteSongIdsSorted(any(), any()) } returns emptyList()
         every { mockMusicRepository.telegramRepository } returns mockTelegramRepository
         every { mockTelegramRepository.downloadCompleted } returns MutableSharedFlow<Int>()
         every { mockLyricsStateHolder.songUpdates } returns MutableSharedFlow()

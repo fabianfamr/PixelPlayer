@@ -134,7 +134,6 @@
 
                 <data android:mimeType="audio/*" />
                 <data android:scheme="content" />
-                <data android:scheme="file" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -263,7 +262,8 @@
         <provider
             android:name=".data.provider.SharedArtworkContentProvider"
             android:authorities="${applicationId}.artwork"
-            android:exported="true" />
+            android:exported="false"
+            android:grantUriPermissions="true" />
 
         <!-- Wear OS Data Layer: receives playback/volume commands from the watch -->
         <service
