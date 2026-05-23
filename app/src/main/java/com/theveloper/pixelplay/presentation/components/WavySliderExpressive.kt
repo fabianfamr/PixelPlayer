@@ -159,15 +159,28 @@ fun WavySliderExpressive(
                 return@collect
             }
 
+            val start = renderedNormalizedProgress.floatValue
+            // Snap on discontinuities (song change, big catch-up after a seek, resume after
+            // backgrounding). Per-tick natural progress is well under 10% even for short
+            // clips, so a bigger jump can't be normal playback — tweening it produces the
+            // "slowly slides to 0" effect on track switch.
+            if (abs(start - target) > 0.1f) {
+                renderedNormalizedProgress.floatValue = target
+                lastProgressUpdateNanos = System.nanoTime()
+                return@collect
+            }
+
             val nowNanos = System.nanoTime()
+            // Cap the perceived interval so a long pause (paused playback, sheet hidden,
+            // backgrounded app) can't translate into a multi-second tween once progress
+            // resumes with a tiny delta.
             val intervalMs = if (lastProgressUpdateNanos == 0L) {
                 180L
             } else {
-                ((nowNanos - lastProgressUpdateNanos) / 1_000_000L).coerceAtLeast(1L)
+                ((nowNanos - lastProgressUpdateNanos) / 1_000_000L).coerceIn(1L, 250L)
             }
             lastProgressUpdateNanos = nowNanos
 
-            val start = renderedNormalizedProgress.floatValue
             if (abs(start - target) <= 0.0001f) {
                 renderedNormalizedProgress.floatValue = target
                 return@collect
