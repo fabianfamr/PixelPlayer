@@ -4038,16 +4038,23 @@ class PlayerViewModel @Inject constructor(
 
             // On Android 11+, use system batch delete dialog
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                val uris = deletableSongs.mapNotNull { song ->
-                    song.id.toLongOrNull()?.let { id ->
-                        com.theveloper.pixelplay.utils.MediaStorePermissionHelper.getMediaStoreUri(id)
+                val deleteRequests = withContext(Dispatchers.IO) {
+                    deletableSongs.mapNotNull { song ->
+                        com.theveloper.pixelplay.utils.MediaStorePermissionHelper
+                            .resolveDeleteRequestUri(
+                                context = activity,
+                                songId = song.id.toLongOrNull(),
+                                contentUriString = song.contentUriString,
+                                filePath = song.path,
+                            )?.let { uri -> song to uri }
                     }
                 }
-                if (uris.isNotEmpty()) {
+                if (deleteRequests.size == deletableSongs.size) {
+                    val uris = deleteRequests.map { it.second }.distinctBy { it.toString() }
                     val intentSender = com.theveloper.pixelplay.utils.MediaStorePermissionHelper
                         .createDeleteRequestIntentSender(activity, uris)
                     if (intentSender != null) {
-                        pendingBatchDeleteSongs = deletableSongs
+                        pendingBatchDeleteSongs = deleteRequests.map { it.first }
                         pendingBatchDeleteSkippedCount = skippedCount
                         pendingBatchDeleteOnComplete = onComplete
                         _deletePermissionRequest.emit(intentSender)
@@ -4153,11 +4160,18 @@ class PlayerViewModel @Inject constructor(
             // On Android 11+, use the system delete confirmation dialog via MediaStore.createDeleteRequest()
             // which both confirms AND handles deletion in one step (no MANAGE_EXTERNAL_STORAGE needed).
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                val songLongId = song.id.toLongOrNull()
-                val intentSender = if (songLongId != null && songLongId > 0) {
+                val intentSender = withContext(Dispatchers.IO) {
                     com.theveloper.pixelplay.utils.MediaStorePermissionHelper
-                        .createDeleteRequestForSong(activity, songLongId)
-                } else null
+                        .resolveDeleteRequestUri(
+                            context = activity,
+                            songId = song.id.toLongOrNull(),
+                            contentUriString = song.contentUriString,
+                            filePath = song.path,
+                        )?.let { uri ->
+                            com.theveloper.pixelplay.utils.MediaStorePermissionHelper
+                                .createDeleteRequestIntentSender(activity, listOf(uri))
+                        }
+                }
                 if (intentSender != null) {
                     pendingDeleteSong = song
                     pendingDeleteCallback = onResult
